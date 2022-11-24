@@ -8,36 +8,8 @@
 #include <grp.h>
 #include <time.h>
 
-#if 0
-           struct stat {
-               dev_t     st_dev;         /* ID of device containing file */
-               ino_t     st_ino;         /* Inode number */
-               mode_t    st_mode;        /* File type and mode */
-               nlink_t   st_nlink;       /* Number of hard links */
-               uid_t     st_uid;         /* User ID of owner */
-               gid_t     st_gid;         /* Group ID of owner */
-               dev_t     st_rdev;        /* Device ID (if special file) */
-               off_t     st_size;        /* Total size, in bytes */
-               blksize_t st_blksize;     /* Block size for filesystem I/O */
-               blkcnt_t  st_blocks;      /* Number of 512B blocks allocated */
 
-               /* Since Linux 2.6, the kernel supports nanosecond
-                  precision for the following timestamp fields.
-                  For the details before Linux 2.6, see NOTES. */
-
-               struct timespec st_atim;  /* Time of last access */
-               struct timespec st_mtim;  /* Time of last modification */
-               struct timespec st_ctim;  /* Time of last status change */
-
-#define st_atime st_atim.tv_sec /* Backward compatibility */
-#define st_mtime st_mtim.tv_sec
-#define st_ctime st_ctim.tv_sec
-           };
-           ctime(2)
-           man 7 inode
-
-#endif
-
+/*struct of 16 bits of the permession of any file*/
 typedef struct
 {
     uint16_t other_x : 1;
@@ -55,6 +27,7 @@ typedef struct
     uint16_t file_type : 4;
 } mode_s;
 
+/*union of 16 bits of the permession of any file*/
 typedef union
 {
     mode_s mode;
@@ -67,15 +40,18 @@ int main(int argc, char **argv)
 {
     char first = 0;
     char num_of_loops = 0;
+    /*for loop for list the files in any dir of in the current path*/
     for (int i = 1; i <= argc; i++)
     {
         DIR *dirptr;
+        /*to list the files in the curr path*/
         if(argc == 1){
             char cwd_buf[100];
             char *cwd = getcwd(cwd_buf, 100);
             printf("CWD: %s\n", cwd);
             dirptr = opendir(cwd);
         }
+        /*to list all files in the dir which passed to the myls command*/
         else{
             num_of_loops++;
             if(first != 0){
@@ -96,9 +72,10 @@ int main(int argc, char **argv)
             }
             mode_u mode_1;
             mode_1.file_per = mystat.st_mode;
-            struct tm *time = gmtime(&(mystat.st_ctim.tv_sec));
-            struct passwd *user_s = getpwuid(mystat.st_uid);
-            struct group *group_s = getgrgid(mystat.st_gid);
+            struct tm *time = gmtime(&(mystat.st_ctim.tv_sec)); //to get time stamps
+            struct passwd *user_s = getpwuid(mystat.st_uid); //to get user name
+            struct group *group_s = getgrgid(mystat.st_gid); //to get group name
+            /*these conditions to find the type of the file (directory, character device, block device, FIFO, symbolic link, socket)*/
             if ((mystat.st_mode & S_IFMT) == S_IFREG)
             {
                 file_type = '-';
@@ -127,7 +104,7 @@ int main(int argc, char **argv)
             {
                 file_type = 'p';
             }
-
+            /*these conditions to handls the month in the time struct of the file*/
             switch (time->tm_mon){
                 case 0:
                     month = "Jan";
@@ -168,6 +145,7 @@ int main(int argc, char **argv)
                 default:
                     break;
             }
+            /*the output of the ls -la format*/
             printf("%c%c%c%c%c%c%c%c%c%c ",
                    file_type,
                    (mode_1.mode.user_r == 1) ? 'r' : '-',
@@ -192,7 +170,7 @@ int main(int argc, char **argv)
             }
             printf("%s\n", entry->d_name );
         }
-        puts("");
+        puts(""); // separation between the content of each dir
         closedir(dirptr);
         if(num_of_loops == (argc - 1)){
             break;
